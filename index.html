@@ -1088,8 +1088,16 @@ window.addEventListener('DOMContentLoaded', async () => {
 
 async function loadProfile(user) {
   currentUser = user;
-  const { data } = await sb.from('profiles').select('*').eq('id', user.id).single();
-  currentProfile = data;
+  // Retry up to 5 times — profile may not exist yet right after signup
+  for (let i = 0; i < 5; i++) {
+    const { data } = await sb.from('profiles').select('*').eq('id', user.id).single();
+    if (data) { currentProfile = data; return; }
+    await new Promise(r => setTimeout(r, 600));
+  }
+  // Fallback: create minimal profile if trigger failed
+  const fallback = { id: user.id, email: user.email, full_name: user.user_metadata?.full_name || user.email.split('@')[0], role: user.user_metadata?.role || 'student' };
+  await sb.from('profiles').upsert(fallback, { onConflict: 'id' });
+  currentProfile = fallback;
 }
 
 function showAuth() {
@@ -1654,39 +1662,95 @@ async function loadMyWork() {
   const { data: assignments } = await sb.from('assignments').select('*').eq('is_active',true).order('created_at',{ascending:false});
   const { data: mySubs } = await sb.from('submissions').select('*, assignments(title,skill)').eq('student_id', currentUser.id).order('submitted_at',{ascending:false});
 
-  const mySubIds = new Set((mySubs||[]).map(s => s.assignment_id));
-  const todo = (assignments||[]).filter(a => !mySubIds.has(a.id));
+  const mySubMap = {};
+  (mySubs||[]).forEach(s => { mySubMap[s.assignment_id] = s; });
+  const todo = (assignments||[]).filter(a => !mySubMap[a.id]);
 
+  // ── TAB: Cần nộp ──
   const todoEl = document.getElementById('sTodoList');
-  if (!todo.length) { todoEl.innerHTML = '<div class="empty-state"><div class="ei">🎉</div><p>Bạn đã nộp tất cả bài tập!</p></div>'; }
-  else todoEl.innerHTML = todo.map(a => `
-    <div class="card" style="margin-bottom:14px;">
-      <div style="display:flex;align-items:flex-start;gap:14px;">
-        <div style="flex:1;">
-          <div style="margin-bottom:6px;"><span class="skill-badge skill-${a.skill}">${a.skill}</span></div>
-          <div style="font-weight:700;font-size:1rem;margin-bottom:4px;">${a.title}</div>
-          <div style="font-size:0.85rem;color:#444;line-height:1.55;margin-bottom:10px;">${a.description}</div>
-          ${a.instructions ? `<div style="font-size:0.82rem;color:var(--muted);">💡 ${a.instructions}</div>` : ''}
-          ${a.deadline ? `<div style="font-size:0.78rem;color:var(--danger);margin-top:8px;">⏰ Hạn nộp: ${formatDate(a.deadline)}</div>` : ''}
+  if (!todo.length) {
+    todoEl.innerHTML = '<div class="empty-state"><div class="ei">🎉</div><p>Bạn đã nộp tất cả bài tập!</p></div>';
+  } else {
+    todoEl.innerHTML = todo.map(a => `
+      <div class="card" style="margin-bottom:16px;" id="asgCard_${a.id}">
+        <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;">
+          <div style="flex:1;">
+            <div style="margin-bottom:6px;display:flex;gap:8px;align-items:center;">
+              <span class="skill-badge skill-${a.skill}">${a.skill}</span>
+              ${a.deadline ? `<span style="font-size:0.75rem;color:var(--danger);font-weight:600;">⏰ Hạn: ${formatDate(a.deadline)}</span>` : ''}
+            </div>
+            <div style="font-weight:700;font-size:1rem;margin-bottom:6px;">${a.title}</div>
+            <div style="font-size:0.88rem;color:#444;line-height:1.6;margin-bottom:8px;">${a.description}</div>
+            ${a.instructions ? `<div style="font-size:0.82rem;color:var(--muted);padding:10px;background:var(--cream);border-radius:8px;margin-bottom:10px;">💡 <strong>Hướng dẫn:</strong> ${a.instructions}</div>` : ''}
+          </div>
         </div>
-        <button class="btn btn-navy btn-sm" onclick="openSubmitWork('${a.id}','${a.title}','${a.skill}')">📤 Nộp bài</button>
+        <!-- INLINE SUBMIT FORM -->
+        <div style="border-top:1px solid var(--border);padding-top:14px;">
+          <div style="font-size:0.8rem;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;">✍️ Bài làm của bạn</div>
+          <textarea id="inlineContent_${a.id}" class="form-textarea" placeholder="Nhập bài làm vào đây... Ví dụ: bài Writing Task 2, đáp án Reading, lời giải Grammar..." style="min-height:160px;margin-bottom:10px;"></textarea>
+          <input id="inlineNote_${a.id}" class="form-input" placeholder="Ghi chú cho thầy (không bắt buộc)..." style="margin-bottom:12px;">
+          <div style="display:flex;justify-content:flex-end;">
+            <button class="btn btn-navy" onclick="inlineSubmitWork('${a.id}','${a.title.replace(/'/g,"\\'")}')">
+              📤 Nộp bài
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
-  `).join('');
+    `).join('');
+  }
 
+  // ── TAB: Đã nộp ──
   const doneEl = document.getElementById('sDoneList');
-  if (!mySubs?.length) { doneEl.innerHTML = '<div class="empty-state"><div class="ei">📋</div><p>Chưa nộp bài nào</p></div>'; return; }
-  doneEl.innerHTML = mySubs.map(s => `
-    <div class="item-row">
-      <div class="item-icon" style="background:${s.status==='graded'?'var(--cream)':'var(--gold-pale)'}">📄</div>
-      <div class="item-info">
-        <div class="item-title">${s.assignments?.title}</div>
-        <div class="item-sub"><span class="skill-badge skill-${s.assignments?.skill}">${s.assignments?.skill}</span> • Nộp ${timeAgo(s.submitted_at)}</div>
-        ${s.feedback ? `<div class="feedback-box" style="margin-top:10px;"><div class="feedback-label">Nhận xét của Sebastian</div><div class="feedback-text">${s.feedback}</div></div>` : ''}
+  // Also show assignments already submitted (with edit option if not graded)
+  const allSubs = Object.values(mySubMap);
+  if (!allSubs.length) { doneEl.innerHTML = '<div class="empty-state"><div class="ei">📋</div><p>Chưa nộp bài nào</p></div>'; return; }
+  doneEl.innerHTML = allSubs.map(s => `
+    <div class="item-row" style="align-items:flex-start;">
+      <div class="item-icon" style="background:${s.status==='graded'?'#e8f5ef':'var(--gold-pale)'}; margin-top:2px;">
+        ${s.status==='graded'?'✅':'📄'}
       </div>
-      ${s.status==='graded' ? `<span class="score-circle ${s.score>=8?'sc-high':s.score>=6?'sc-mid':'sc-low'}">${s.score}</span>` : '<span class="chip chip-pending">Chờ chấm</span>'}
+      <div class="item-info" style="flex:1;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
+          <span class="item-title">${s.assignments?.title}</span>
+          <span class="skill-badge skill-${s.assignments?.skill}">${s.assignments?.skill}</span>
+        </div>
+        <div class="item-sub" style="margin-bottom:6px;">Nộp ${timeAgo(s.submitted_at)}</div>
+        ${s.content ? `<div style="font-size:0.82rem;color:#555;background:var(--cream);padding:10px 14px;border-radius:8px;line-height:1.6;max-height:100px;overflow:hidden;">${s.content.substring(0,200)}${s.content.length>200?'...':''}</div>` : ''}
+        ${s.feedback ? `
+          <div class="feedback-box" style="margin-top:10px;">
+            <div class="feedback-label">📝 Nhận xét của Sebastian</div>
+            <div class="feedback-text">${s.feedback}</div>
+            ${s.band_equivalent ? `<div style="margin-top:8px;font-weight:700;color:var(--gold);">Band tương đương: ${s.band_equivalent}</div>` : ''}
+          </div>` : '<div style="font-size:0.78rem;color:var(--muted);margin-top:6px;font-style:italic;">⏳ Đang chờ thầy chấm...</div>'
+        }
+      </div>
+      <div style="flex-shrink:0;margin-left:8px;">
+        ${s.status==='graded'
+          ? `<span class="score-circle ${s.score>=8?'sc-high':s.score>=6?'sc-mid':'sc-low'}">${s.score}</span>`
+          : `<span class="chip chip-pending">Chờ chấm</span>`
+        }
+      </div>
     </div>
   `).join('');
+}
+
+async function inlineSubmitWork(assignId, title) {
+  const content = document.getElementById('inlineContent_' + assignId)?.value.trim();
+  const note = document.getElementById('inlineNote_' + assignId)?.value.trim();
+  if (!content) { showToast('⚠️ Vui lòng nhập bài làm trước khi nộp'); return; }
+  const fullContent = content + (note ? '\n\n[Ghi chú: ' + note + ']' : '');
+  const btn = event.target;
+  btn.textContent = 'Đang nộp...'; btn.disabled = true;
+  const { error } = await sb.from('submissions').upsert({
+    assignment_id: assignId, student_id: currentUser.id,
+    content: fullContent, status: 'submitted',
+    submitted_at: new Date().toISOString()
+  }, { onConflict: 'assignment_id,student_id' });
+  btn.textContent = '📤 Nộp bài'; btn.disabled = false;
+  if (error) { showToast('❌ ' + error.message); return; }
+  showToast('✅ Đã nộp bài: ' + title);
+  loadMyWork();
+  loadStudentDashboard();
 }
 
 function openSubmitWork(assignId, title, skill) {
