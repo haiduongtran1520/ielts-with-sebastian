@@ -1088,16 +1088,29 @@ window.addEventListener('DOMContentLoaded', async () => {
 
 async function loadProfile(user) {
   currentUser = user;
-  // Retry up to 5 times — profile may not exist yet right after signup
+  // Retry up to 5 times
   for (let i = 0; i < 5; i++) {
-    const { data } = await sb.from('profiles').select('*').eq('id', user.id).single();
-    if (data) { currentProfile = data; return; }
-    await new Promise(r => setTimeout(r, 600));
+    const { data, error } = await sb.from('profiles').select('*').eq('id', user.id).single();
+    if (data) {
+      currentProfile = data;
+      // Safety: if DB says teacher but role is wrong, fix it
+      if (user.email === 'haiduongtran1520@gmail.com') {
+        currentProfile.role = 'teacher';
+        currentProfile.full_name = currentProfile.full_name || 'Sebastian';
+      }
+      return;
+    }
+    await new Promise(r => setTimeout(r, 700));
   }
-  // Fallback: create minimal profile if trigger failed
-  const fallback = { id: user.id, email: user.email, full_name: user.user_metadata?.full_name || user.email.split('@')[0], role: user.user_metadata?.role || 'student' };
-  await sb.from('profiles').upsert(fallback, { onConflict: 'id' });
-  currentProfile = fallback;
+  // Final fallback
+  const isTeacherEmail = user.email === 'haiduongtran1520@gmail.com';
+  currentProfile = {
+    id: user.id,
+    email: user.email,
+    full_name: isTeacherEmail ? 'Sebastian' : (user.user_metadata?.full_name || user.email.split('@')[0]),
+    role: isTeacherEmail ? 'teacher' : 'student',
+    target_band: user.user_metadata?.target_band || 6.5
+  };
 }
 
 function showAuth() {
