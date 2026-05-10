@@ -1059,7 +1059,7 @@ body {
 const SUPABASE_URL = 'https://gepjomwdvaindcqiudoa.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdlcGpvbXdkdmFpbmRjcWl1ZG9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzODU2NzcsImV4cCI6MjA5Mzk2MTY3N30.cD15Pq3NVRJL9CJqGO3vs9HqT5tcHvL8S0o67dOwEcI';
 const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+const _mem = {}; const memStore = { getItem: k => { try { return localStorage.getItem(k); } catch(e) { return _mem[k]??null; } }, setItem: (k,v) => { try { localStorage.setItem(k,v); } catch(e) {} _mem[k]=v; }, removeItem: k => { try { localStorage.removeItem(k); } catch(e) {} delete _mem[k]; } }; const sb = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { storage: memStore, persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
 
 let currentUser = null;
 let currentProfile = null;
