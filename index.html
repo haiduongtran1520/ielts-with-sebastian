@@ -923,9 +923,17 @@ body {
       <label class="form-label">Link video (YouTube, Google Drive...)</label>
       <input class="form-input" id="mLessonVideo" placeholder="https://youtube.com/...">
     </div>
+    <div class="form-group">
+      <label class="form-label">Đính kèm file tài liệu (Word, PDF, PPT...)</label>
+      <div id="lessonFileZone" style="border:2px dashed var(--border);border-radius:10px;padding:18px;text-align:center;cursor:pointer;transition:all .2s;"
+           onclick="document.getElementById('mLessonFile').click()">
+        <div id="mLessonFileLabel" style="color:var(--muted);font-size:0.88rem;">📎 Nhấn để chọn file<br><span style="font-size:0.75rem;">Word, PDF, PowerPoint, Excel — tối đa 10MB</span></div>
+        <input type="file" id="mLessonFile" style="display:none" accept=".doc,.docx,.pdf,.ppt,.pptx,.xls,.xlsx,.txt" onchange="previewLessonFile(this)">
+      </div>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modalLesson')">Hủy</button>
-      <button class="btn btn-navy" onclick="submitLesson()">Đăng bài giảng</button>
+      <button class="btn btn-navy" id="submitLessonBtn" onclick="submitLesson()">Đăng bài giảng</button>
     </div>
   </div>
 </div>
@@ -1038,11 +1046,15 @@ body {
 
 <!-- Modal: View Lesson -->
 <div class="modal-overlay" id="modalViewLesson">
-  <div class="modal" style="max-width:680px;">
-    <div class="modal-title" id="viewLessonTitle"></div>
-    <div id="viewLessonMeta" style="margin-bottom:16px;display:flex;gap:10px;align-items:center;"></div>
-    <div id="viewLessonContent" style="font-size:0.92rem;line-height:1.75;color:#333;white-space:pre-wrap;max-height:400px;overflow-y:auto;padding-right:4px;"></div>
-    <div id="viewLessonVideo" style="margin-top:16px;"></div>
+  <div class="modal" style="max-width:780px;width:95vw;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:6px;">
+      <div class="modal-title" id="viewLessonTitle" style="margin-bottom:0;font-size:1.6rem;"></div>
+      <button onclick="closeModal('modalViewLesson')" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--muted);flex-shrink:0;">✕</button>
+    </div>
+    <div id="viewLessonMeta" style="margin-bottom:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;"></div>
+    <div id="viewLessonContent" style="font-size:0.93rem;line-height:1.85;color:#222;white-space:pre-wrap;max-height:55vh;overflow-y:auto;padding:16px 18px;background:var(--cream);border-radius:10px;border:1px solid var(--border);"></div>
+    <div id="viewLessonVideo" style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;"></div>
+    <div id="viewLessonFile" style="margin-top:8px;"></div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modalViewLesson')">Đóng</button>
     </div>
@@ -1327,14 +1339,27 @@ function renderLessonsGrid(gridId, lessons, isTeacher) {
 
 function viewLesson(l) {
   document.getElementById('viewLessonTitle').textContent = l.title;
-  document.getElementById('viewLessonMeta').innerHTML = `<span class="skill-badge skill-${l.skill}">${l.skill}</span><span style="font-size:0.8rem;color:var(--muted)">Band ${l.band_target} • ${formatDate(l.created_at)}</span>`;
-  document.getElementById('viewLessonContent').textContent = l.content;
-  document.getElementById('viewLessonVideo').innerHTML = l.video_url
-    ? `<a href="${l.video_url}" target="_blank" class="btn btn-navy btn-sm">▶ Xem video bài giảng</a>` : '';
+  document.getElementById('viewLessonMeta').innerHTML = `
+    <span class="skill-badge skill-${l.skill}">${l.skill}</span>
+    <span style="font-size:0.8rem;color:var(--muted);">Band ${l.band_target}</span>
+    <span style="font-size:0.8rem;color:var(--muted);">📅 ${formatDate(l.created_at)}</span>
+    <span style="font-size:0.8rem;color:var(--muted);">👁 ${l.view_count} lượt xem</span>
+  `;
+  // Format content with line breaks
+  const contentEl = document.getElementById('viewLessonContent');
+  contentEl.innerHTML = (l.content||'')    .replace(/&/g,'&amp;')    .replace(/</g,'&lt;')    .replace(/>/g,'&gt;')    .replace(/\n/g,'<br>');
+  // Video + file links
+  const videoEl = document.getElementById('viewLessonVideo');
+  videoEl.innerHTML = '';
+  if (l.video_url) {
+    videoEl.innerHTML += `<a href="${l.video_url}" target="_blank" class="btn btn-navy btn-sm">▶ Xem video / tài liệu</a>`;
+  }
+  const fileEl = document.getElementById('viewLessonFile');
+  fileEl.innerHTML = l.file_url
+    ? `<a href="${l.file_url}" target="_blank" class="btn btn-gold-outline btn-sm">📎 Tải file đính kèm: ${l.file_name||'Tài liệu'}</a>`
+    : '';
   openModal('modalViewLesson');
-  // increment view count
   sb.from('lessons').update({view_count: (l.view_count||0)+1}).eq('id',l.id);
-  // mark progress for students
   if (currentProfile?.role === 'student') {
     sb.from('lesson_progress').upsert({student_id: currentUser.id, lesson_id: l.id},{onConflict:'student_id,lesson_id'});
   }
@@ -1358,6 +1383,25 @@ function filterSLessons(btn, skill) {
   renderLessonsGrid('sLessonsGrid', filtered, false);
 }
 
+let _lessonFile = null;
+function previewLessonFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) { showToast('⚠️ File quá lớn, tối đa 10MB'); return; }
+  _lessonFile = file;
+  document.getElementById('mLessonFileLabel').innerHTML = `✅ <strong>${file.name}</strong> (${(file.size/1024).toFixed(0)} KB)`;
+  document.getElementById('lessonFileZone').style.borderColor = 'var(--gold)';
+}
+
+async function uploadLessonFile(file) {
+  const ext = file.name.split('.').pop();
+  const path = `lessons/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+  const { data, error } = await sb.storage.from('lesson-files').upload(path, file, {contentType: file.type});
+  if (error) return { url: null, name: file.name, error: error.message };
+  const { data: urlData } = sb.storage.from('lesson-files').getPublicUrl(path);
+  return { url: urlData.publicUrl, name: file.name, error: null };
+}
+
 async function submitLesson() {
   const title = document.getElementById('mLessonTitle').value.trim();
   const content = document.getElementById('mLessonContent').value.trim();
@@ -1365,14 +1409,36 @@ async function submitLesson() {
   const band = document.getElementById('mLessonBand').value;
   const video = document.getElementById('mLessonVideo').value.trim();
   if (!title || !content) { showToast('⚠️ Vui lòng điền tiêu đề và nội dung'); return; }
-  const { error } = await sb.from('lessons').insert({
-    teacher_id: currentUser.id, title, skill, band_target: band, content, video_url: video || null
-  });
+  const btn = document.getElementById('submitLessonBtn');
+  btn.textContent = 'Đang đăng...'; btn.disabled = true;
+  let fileUrl = null, fileName = null;
+  if (_lessonFile) {
+    showToast('📤 Đang upload file...');
+    const result = await uploadLessonFile(_lessonFile);
+    if (result.error) { showToast('⚠️ Upload file thất bại, đăng bài không có file'); }
+    else { fileUrl = result.url; fileName = result.name; }
+  }
+  // Retry up to 3 times if session issue
+  let error;
+  for (let i = 0; i < 3; i++) {
+    const res = await sb.from('lessons').insert({
+      teacher_id: currentUser.id, title, skill, band_target: band, content,
+      video_url: video || null, file_url: fileUrl, file_name: fileName
+    });
+    error = res.error;
+    if (!error) break;
+    await new Promise(r => setTimeout(r, 500));
+  }
+  btn.textContent = 'Đăng bài giảng'; btn.disabled = false;
   if (error) { showToast('❌ Lỗi: ' + error.message); return; }
   closeModal('modalLesson');
+  _lessonFile = null;
   document.getElementById('mLessonTitle').value = '';
   document.getElementById('mLessonContent').value = '';
   document.getElementById('mLessonVideo').value = '';
+  document.getElementById('mLessonFile').value = '';
+  document.getElementById('mLessonFileLabel').innerHTML = '📎 Nhấn để chọn file<br><span style="font-size:0.75rem;">Word, PDF, PowerPoint, Excel — tối đa 10MB</span>';
+  document.getElementById('lessonFileZone').style.borderColor = 'var(--border)';
   showToast('✅ Đã đăng bài giảng!');
   loadLessons('teacher');
   loadTeacherDashboard();
