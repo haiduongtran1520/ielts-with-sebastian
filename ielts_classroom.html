@@ -1,0 +1,1817 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IELTS with Sebastian</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #0d1b2a;
+  --navy2: #1b2d42;
+  --gold: #c9943a;
+  --gold2: #e8b455;
+  --gold-pale: #fdf3e3;
+  --cream: #faf8f4;
+  --white: #ffffff;
+  --ink: #1a1a2e;
+  --muted: #7a7a8c;
+  --border: #e8e4dc;
+  --success: #2d7a5a;
+  --danger: #b03030;
+  --reading: #1a6b8a;
+  --listening: #6b3fa0;
+  --writing: #2d7a5a;
+  --speaking: #b05a20;
+  --vocab: #1a4a8a;
+  --grammar: #7a2d5a;
+  --radius: 14px;
+  --shadow: 0 4px 24px rgba(13,27,42,0.08);
+  --shadow-lg: 0 12px 48px rgba(13,27,42,0.14);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--cream);
+  color: var(--ink);
+  min-height: 100vh;
+}
+
+/* ── AUTH SCREEN ── */
+#authScreen {
+  min-height: 100vh;
+  display: flex;
+  background: var(--navy);
+  position: relative;
+  overflow: hidden;
+}
+#authScreen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(ellipse 60% 50% at 20% 50%, rgba(201,148,58,0.12) 0%, transparent 70%),
+    radial-gradient(ellipse 40% 60% at 80% 30%, rgba(201,148,58,0.06) 0%, transparent 60%);
+}
+.auth-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 60px;
+  position: relative;
+  z-index: 1;
+}
+.auth-brand {
+  margin-bottom: 48px;
+}
+.auth-brand-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2.6rem;
+  color: var(--white);
+  line-height: 1.1;
+  font-weight: 700;
+}
+.auth-brand-name span { color: var(--gold2); }
+.auth-brand-sub {
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.45);
+  margin-top: 6px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.auth-pitch {
+  color: rgba(255,255,255,0.7);
+  font-size: 1rem;
+  line-height: 1.8;
+  max-width: 380px;
+}
+.auth-skills {
+  display: flex; gap: 10px; flex-wrap: wrap; margin-top: 32px;
+}
+.auth-skill-chip {
+  padding: 6px 14px; border-radius: 20px;
+  font-size: 0.78rem; font-weight: 600;
+  border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.6);
+}
+
+.auth-right {
+  width: 460px;
+  background: var(--white);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 52px 48px;
+  position: relative;
+  z-index: 1;
+}
+.auth-tabs {
+  display: flex; gap: 0; margin-bottom: 32px;
+  border-bottom: 2px solid var(--border);
+}
+.auth-tab {
+  flex: 1; padding: 12px;
+  border: none; background: none; cursor: pointer;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.9rem; font-weight: 600;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all .2s;
+}
+.auth-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+.auth-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.8rem; font-weight: 700;
+  color: var(--navy); margin-bottom: 24px;
+}
+
+.form-group { margin-bottom: 18px; }
+.form-label {
+  display: block; font-size: 0.8rem;
+  font-weight: 600; color: var(--navy2);
+  margin-bottom: 7px; letter-spacing: 0.3px;
+}
+.form-input, .form-select, .form-textarea {
+  width: 100%; padding: 12px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.92rem; color: var(--ink);
+  background: var(--cream);
+  outline: none; transition: all .2s;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--gold);
+  background: var(--white);
+  box-shadow: 0 0 0 3px rgba(201,148,58,0.1);
+}
+.form-textarea { min-height: 90px; resize: vertical; }
+.form-select { cursor: pointer; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px 24px; border-radius: 10px;
+  font-family: 'Outfit', sans-serif; font-size: 0.9rem;
+  font-weight: 600; cursor: pointer; transition: all .2s;
+  border: none; text-decoration: none;
+}
+.btn-primary {
+  background: var(--gold); color: var(--white);
+  width: 100%; margin-top: 8px;
+}
+.btn-primary:hover { background: #b8832a; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(201,148,58,0.35); }
+.btn-navy { background: var(--navy); color: var(--white); }
+.btn-navy:hover { background: var(--navy2); }
+.btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--ink); }
+.btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+.btn-sm { padding: 7px 16px; font-size: 0.82rem; }
+.btn-danger { background: var(--danger); color: var(--white); }
+.btn-success { background: var(--success); color: var(--white); }
+.btn-gold-outline { border: 1.5px solid var(--gold); color: var(--gold); background: transparent; }
+.btn-gold-outline:hover { background: var(--gold-pale); }
+
+.auth-error {
+  background: #fdf0f0; border: 1px solid #f0c0c0;
+  color: var(--danger); padding: 10px 14px;
+  border-radius: 8px; font-size: 0.83rem;
+  margin-bottom: 16px; display: none;
+}
+
+/* ── APP SHELL ── */
+#appShell { display: none; }
+
+/* ── TOPBAR ── */
+.topbar {
+  background: var(--navy);
+  height: 58px;
+  display: flex; align-items: center;
+  padding: 0 24px;
+  gap: 20px;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 2px 20px rgba(0,0,0,0.2);
+}
+.topbar-brand {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.3rem; font-weight: 700;
+  color: var(--white); white-space: nowrap;
+}
+.topbar-brand span { color: var(--gold2); }
+.topbar-nav { display: flex; gap: 2px; flex: 1; overflow-x: auto; }
+.topbar-nav::-webkit-scrollbar { display: none; }
+.nav-btn {
+  padding: 7px 14px; border-radius: 8px;
+  border: none; background: none; cursor: pointer;
+  font-family: 'Outfit', sans-serif; font-size: 0.83rem;
+  color: rgba(255,255,255,0.6); white-space: nowrap;
+  transition: all .18s; font-weight: 500;
+}
+.nav-btn:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.9); }
+.nav-btn.active { background: rgba(201,148,58,0.2); color: var(--gold2); font-weight: 600; }
+
+.topbar-user {
+  display: flex; align-items: center; gap: 10px;
+  margin-left: auto; flex-shrink: 0;
+}
+.user-name { font-size: 0.83rem; color: rgba(255,255,255,0.7); }
+.user-avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--gold); color: var(--white);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.85rem;
+  cursor: pointer; border: 2px solid rgba(255,255,255,0.2);
+}
+.topbar-logout {
+  padding: 6px 12px; border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: none; color: rgba(255,255,255,0.5);
+  font-family: 'Outfit', sans-serif; font-size: 0.78rem;
+  cursor: pointer; transition: all .2s;
+}
+.topbar-logout:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.8); }
+
+/* ── MAIN CONTENT ── */
+.main-content { padding: 28px 32px; max-width: 1200px; margin: 0 auto; }
+
+/* ── PAGE ── */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ── PAGE HEADER ── */
+.page-header {
+  display: flex; align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.page-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2rem; font-weight: 700; color: var(--navy);
+}
+.page-subtitle {
+  font-size: 0.85rem; color: var(--muted);
+  margin-top: 4px; font-family: 'Outfit', sans-serif; font-weight: 400;
+}
+
+/* ── STATS ── */
+.stats-grid {
+  display: grid; grid-template-columns: repeat(4,1fr);
+  gap: 16px; margin-bottom: 28px;
+}
+.stat-card {
+  background: var(--white); border-radius: var(--radius);
+  padding: 20px 22px; border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  border-top: 3px solid var(--gold);
+}
+.stat-label { font-size: 0.75rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; }
+.stat-value { font-size: 2rem; font-weight: 700; color: var(--navy); line-height: 1.1; margin-top: 6px; }
+.stat-sub { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--white); border-radius: var(--radius);
+  border: 1px solid var(--border); box-shadow: var(--shadow);
+  padding: 22px 26px;
+}
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; }
+
+/* ── SKILL BADGE ── */
+.skill-badge {
+  display: inline-block; padding: 3px 10px;
+  border-radius: 20px; font-size: 0.72rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.skill-Reading { background: #e8f4f8; color: var(--reading); }
+.skill-Listening { background: #f0eaf8; color: var(--listening); }
+.skill-Writing { background: #e8f5ef; color: var(--writing); }
+.skill-Speaking { background: #fdf0e8; color: var(--speaking); }
+.skill-Vocabulary { background: #e8ecf5; color: var(--vocab); }
+.skill-Grammar { background: #f5e8f0; color: var(--grammar); }
+.skill-General { background: #f0f0f0; color: #555; }
+
+/* ── LESSON CARD ── */
+.lesson-card {
+  background: var(--white); border-radius: var(--radius);
+  border: 1px solid var(--border); overflow: hidden;
+  transition: all .22s; cursor: pointer;
+}
+.lesson-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-3px); }
+.lesson-card-top {
+  height: 8px;
+}
+.lesson-card-body { padding: 18px 20px; }
+.lesson-card-title { font-weight: 600; font-size: 0.95rem; margin: 8px 0 6px; line-height: 1.4; }
+.lesson-card-meta { font-size: 0.78rem; color: var(--muted); display: flex; gap: 14px; align-items: center; }
+.lesson-card-desc { font-size: 0.83rem; color: #555; margin-top: 8px; line-height: 1.5; }
+.lesson-card-actions { display: flex; gap: 8px; margin-top: 14px; }
+
+/* ── ITEM ROW ── */
+.item-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 0; border-bottom: 1px solid var(--border);
+}
+.item-row:last-child { border-bottom: none; }
+.item-icon {
+  width: 42px; height: 42px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; flex-shrink: 0;
+}
+.item-info { flex: 1; min-width: 0; }
+.item-title { font-weight: 600; font-size: 0.9rem; }
+.item-sub { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+
+/* ── STATUS CHIP ── */
+.chip {
+  padding: 3px 10px; border-radius: 20px;
+  font-size: 0.72rem; font-weight: 700;
+  white-space: nowrap;
+}
+.chip-pending { background: #fef8e8; color: #a07010; }
+.chip-graded  { background: #e8f5ef; color: var(--success); }
+.chip-late    { background: #fdf0f0; color: var(--danger); }
+.chip-open    { background: #e8ecf8; color: #2040a0; }
+
+/* ── SCORE CIRCLE ── */
+.score-circle {
+  width: 38px; height: 38px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.85rem; flex-shrink: 0;
+}
+.sc-high { background: #e8f5ef; color: var(--success); }
+.sc-mid  { background: #fef8e8; color: #a07010; }
+.sc-low  { background: #fdf0f0; color: var(--danger); }
+
+/* ── SECTION TITLE ── */
+.section-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.2rem; font-weight: 700; color: var(--navy);
+  margin-bottom: 16px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+/* ── TABS ── */
+.tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 20px; gap: 2px; }
+.tab {
+  padding: 10px 18px; cursor: pointer;
+  font-size: 0.87rem; font-weight: 500;
+  color: var(--muted); border: none; background: none;
+  font-family: 'Outfit', sans-serif;
+  border-bottom: 2px solid transparent; margin-bottom: -2px;
+  transition: all .18s;
+}
+.tab.active { color: var(--gold); border-bottom-color: var(--gold); font-weight: 700; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(13,27,42,0.6);
+  backdrop-filter: blur(6px);
+  z-index: 300;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity .25s;
+  padding: 20px;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal {
+  background: var(--white); border-radius: 18px;
+  padding: 32px 36px; width: 100%; max-width: 560px;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.25);
+  transform: translateY(24px); transition: transform .28s;
+  max-height: 90vh; overflow-y: auto;
+}
+.modal-overlay.open .modal { transform: translateY(0); }
+.modal-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.5rem; font-weight: 700; color: var(--navy);
+  margin-bottom: 22px;
+}
+.modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; }
+
+/* ── DISCUSSION ── */
+.post-item {
+  display: flex; gap: 12px;
+  padding: 16px 0; border-bottom: 1px solid var(--border);
+}
+.post-item:last-child { border-bottom: none; }
+.post-avatar {
+  width: 38px; height: 38px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.85rem; color: var(--white);
+  flex-shrink: 0;
+}
+.post-body { flex: 1; }
+.post-header { display: flex; gap: 8px; align-items: center; margin-bottom: 5px; }
+.post-name { font-weight: 600; font-size: 0.88rem; }
+.post-time { font-size: 0.75rem; color: var(--muted); }
+.post-text { font-size: 0.88rem; line-height: 1.6; color: #333; }
+.teacher-badge {
+  background: var(--gold); color: var(--white);
+  font-size: 0.65rem; font-weight: 700;
+  padding: 2px 7px; border-radius: 10px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--navy); color: var(--white);
+  padding: 14px 20px; border-radius: 12px;
+  font-size: 0.87rem; box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  z-index: 999; transform: translateY(80px) scale(0.96);
+  transition: all .3s; max-width: 340px;
+  border-left: 3px solid var(--gold);
+}
+.toast.show { transform: translateY(0) scale(1); }
+
+/* ── BAND DISPLAY ── */
+.band-display {
+  display: inline-flex; align-items: baseline; gap: 4px;
+}
+.band-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2.8rem; font-weight: 700; color: var(--gold); line-height: 1;
+}
+.band-label { font-size: 0.78rem; color: var(--muted); font-weight: 500; }
+
+/* ── SEARCH ── */
+.search-bar {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--white); border: 1.5px solid var(--border);
+  border-radius: 10px; padding: 10px 16px; margin-bottom: 20px;
+}
+.search-bar input {
+  flex: 1; border: none; outline: none;
+  font-family: 'Outfit', sans-serif; font-size: 0.9rem;
+  color: var(--ink); background: transparent;
+}
+
+/* ── LOADING ── */
+.loading {
+  display: flex; align-items: center; justify-content: center;
+  padding: 48px; color: var(--muted); gap: 12px;
+  font-size: 0.9rem;
+}
+.spinner {
+  width: 22px; height: 22px;
+  border: 2px solid var(--border);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── EMPTY ── */
+.empty-state {
+  text-align: center; padding: 52px 24px; color: var(--muted);
+}
+.empty-state .ei { font-size: 2.8rem; margin-bottom: 14px; }
+.empty-state p { font-size: 0.88rem; line-height: 1.6; }
+
+/* ── ANNOUNCEMENT CARD ── */
+.ann-card {
+  border-radius: var(--radius); padding: 18px 22px;
+  border: 1px solid var(--border); background: var(--white);
+  margin-bottom: 14px;
+  border-left: 4px solid var(--gold);
+}
+.ann-card.important { border-left-color: var(--danger); }
+.ann-title { font-weight: 700; font-size: 1rem; margin-bottom: 6px; }
+.ann-content { font-size: 0.87rem; color: #444; line-height: 1.65; }
+.ann-date { font-size: 0.75rem; color: var(--muted); margin-top: 10px; }
+
+/* ── WRITING FEEDBACK ── */
+.feedback-box {
+  background: var(--gold-pale); border: 1px solid #f0d8a8;
+  border-radius: 10px; padding: 16px 18px; margin-top: 14px;
+}
+.feedback-label { font-size: 0.75rem; font-weight: 700; color: var(--gold); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.feedback-text { font-size: 0.88rem; line-height: 1.65; color: var(--ink); }
+
+/* Skill color tops for lesson cards */
+.top-Reading { background: var(--reading); }
+.top-Listening { background: var(--listening); }
+.top-Writing { background: var(--writing); }
+.top-Speaking { background: var(--speaking); }
+.top-Vocabulary { background: var(--vocab); }
+.top-Grammar { background: var(--grammar); }
+.top-General { background: var(--muted); }
+
+@media(max-width: 900px) {
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .grid-3 { grid-template-columns: 1fr; }
+  .grid-2 { grid-template-columns: 1fr; }
+  .main-content { padding: 20px 16px; }
+  .auth-left { display: none; }
+  .auth-right { width: 100%; padding: 36px 28px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ AUTH SCREEN ══════════════ -->
+<div id="authScreen">
+  <div class="auth-left">
+    <div class="auth-brand">
+      <div class="auth-brand-name">IELTS with<br><span>Sebastian</span></div>
+      <div class="auth-brand-sub">Lớp học trực tuyến</div>
+    </div>
+    <p class="auth-pitch">
+      Nền tảng luyện thi IELTS toàn diện — từ Reading, Listening, Writing đến Speaking. Học bài giảng, làm bài tập, nhận phản hồi chi tiết từ giáo viên.
+    </p>
+    <div class="auth-skills">
+      <div class="auth-skill-chip">📖 Reading</div>
+      <div class="auth-skill-chip">🎧 Listening</div>
+      <div class="auth-skill-chip">✍️ Writing</div>
+      <div class="auth-skill-chip">🗣️ Speaking</div>
+      <div class="auth-skill-chip">📝 Grammar</div>
+      <div class="auth-skill-chip">📚 Vocabulary</div>
+    </div>
+  </div>
+
+  <div class="auth-right">
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">Đăng nhập</button>
+      <button class="auth-tab" onclick="switchAuthTab('register')">Đăng ký</button>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="loginForm">
+      <div class="auth-title">Chào mừng trở lại</div>
+      <div class="auth-error" id="loginError"></div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" type="email" id="loginEmail" placeholder="email@gmail.com" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mật khẩu</label>
+        <input class="form-input" type="password" id="loginPassword" placeholder="••••••••" />
+      </div>
+      <button class="btn btn-primary" onclick="doLogin()" id="loginBtn">Đăng nhập</button>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="registerForm" style="display:none;">
+      <div class="auth-title">Tạo tài khoản</div>
+      <div class="auth-error" id="registerError"></div>
+      <div class="form-group">
+        <label class="form-label">Họ và tên</label>
+        <input class="form-input" type="text" id="regName" placeholder="Nguyễn Văn A" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" type="email" id="regEmail" placeholder="email@gmail.com" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mật khẩu</label>
+        <input class="form-input" type="password" id="regPassword" placeholder="Tối thiểu 6 ký tự" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Band IELTS mục tiêu</label>
+        <select class="form-select" id="regBand">
+          <option value="5.0">5.0</option>
+          <option value="5.5">5.5</option>
+          <option value="6.0">6.0</option>
+          <option value="6.5" selected>6.5</option>
+          <option value="7.0">7.0</option>
+          <option value="7.5">7.5</option>
+          <option value="8.0">8.0</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="doRegister()" id="registerBtn">Tạo tài khoản</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ APP SHELL ══════════════ -->
+<div id="appShell">
+
+  <!-- TOPBAR -->
+  <nav class="topbar">
+    <div class="topbar-brand">IELTS with <span>Sebastian</span></div>
+    <div class="topbar-nav" id="topbarNav">
+      <!-- filled by JS based on role -->
+    </div>
+    <div class="topbar-user">
+      <span class="user-name" id="topbarUserName"></span>
+      <div class="user-avatar" id="topbarAvatar">?</div>
+      <button class="topbar-logout" onclick="doLogout()">Đăng xuất</button>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <div class="main-content">
+
+    <!-- ══ TEACHER PAGES ══ -->
+
+    <!-- T: Dashboard -->
+    <div class="page" id="page-tdashboard">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Tổng quan lớp học</div>
+          <div class="page-subtitle">IELTS with Sebastian — Xin chào, <span id="teacherName">Thầy/Cô</span>!</div>
+        </div>
+        <button class="btn btn-navy" onclick="openModal('modalLesson')">+ Đăng bài giảng</button>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Học sinh</div>
+          <div class="stat-value" id="statStudents">—</div>
+          <div class="stat-sub">Đang học</div>
+        </div>
+        <div class="stat-card" style="border-top-color:var(--reading)">
+          <div class="stat-label">Bài giảng</div>
+          <div class="stat-value" id="statLessons">—</div>
+          <div class="stat-sub">Đã đăng</div>
+        </div>
+        <div class="stat-card" style="border-top-color:var(--danger)">
+          <div class="stat-label">Chờ chấm</div>
+          <div class="stat-value" id="statPending">—</div>
+          <div class="stat-sub">Bài nộp</div>
+        </div>
+        <div class="stat-card" style="border-top-color:var(--success)">
+          <div class="stat-label">Bài tập đang mở</div>
+          <div class="stat-value" id="statAssignments">—</div>
+          <div class="stat-sub">Cho lớp</div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="section-title">Bài nộp chờ chấm <button class="btn btn-sm btn-gold-outline" onclick="showPage('tsubmissions')">Xem tất cả</button></div>
+          <div id="pendingList"><div class="loading"><div class="spinner"></div>Đang tải...</div></div>
+        </div>
+        <div class="card">
+          <div class="section-title">Bài giảng mới nhất <button class="btn btn-sm btn-gold-outline" onclick="showPage('tlessons')">Xem tất cả</button></div>
+          <div id="recentLessons"><div class="loading"><div class="spinner"></div>Đang tải...</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- T: Lessons -->
+    <div class="page" id="page-tlessons">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Bài giảng</div>
+          <div class="page-subtitle">Quản lý tài liệu IELTS</div>
+        </div>
+        <button class="btn btn-navy" onclick="openModal('modalLesson')">+ Thêm bài giảng</button>
+      </div>
+      <div class="search-bar">
+        <span>🔍</span>
+        <input placeholder="Tìm bài giảng..." oninput="filterLessons(this.value)" id="lessonSearch">
+        <select class="form-select" style="width:auto;padding:6px 12px;" onchange="filterLessonsBySkill(this.value)">
+          <option value="">Tất cả kỹ năng</option>
+          <option>Reading</option><option>Listening</option>
+          <option>Writing</option><option>Speaking</option>
+          <option>Vocabulary</option><option>Grammar</option>
+        </select>
+      </div>
+      <div class="grid-3" id="lessonsGrid">
+        <div class="loading" style="grid-column:1/-1"><div class="spinner"></div>Đang tải...</div>
+      </div>
+    </div>
+
+    <!-- T: Assignments -->
+    <div class="page" id="page-tassignments">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Bài tập</div>
+          <div class="page-subtitle">Giao bài và theo dõi tiến độ</div>
+        </div>
+        <button class="btn btn-navy" onclick="openModal('modalAssignment')">+ Giao bài tập</button>
+      </div>
+      <div id="assignmentsList"><div class="loading"><div class="spinner"></div>Đang tải...</div></div>
+    </div>
+
+    <!-- T: Submissions -->
+    <div class="page" id="page-tsubmissions">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Bài nộp</div>
+          <div class="page-subtitle">Chấm điểm và nhận xét</div>
+        </div>
+      </div>
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab(this,'tsub-pending')">Chờ chấm</button>
+        <button class="tab" onclick="switchTab(this,'tsub-graded')">Đã chấm</button>
+      </div>
+      <div class="tab-content active" id="tsub-pending">
+        <div class="card" id="pendingSubmissions"><div class="loading"><div class="spinner"></div></div></div>
+      </div>
+      <div class="tab-content" id="tsub-graded">
+        <div class="card" id="gradedSubmissions"><div class="loading"><div class="spinner"></div></div></div>
+      </div>
+    </div>
+
+    <!-- T: Students -->
+    <div class="page" id="page-tstudents">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Học sinh</div>
+          <div class="page-subtitle">Danh sách và tiến độ học tập</div>
+        </div>
+      </div>
+      <div class="card" id="studentsList"><div class="loading"><div class="spinner"></div></div></div>
+    </div>
+
+    <!-- T: Announcements -->
+    <div class="page" id="page-tannouncements">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Thông báo</div>
+          <div class="page-subtitle">Gửi thông báo đến toàn lớp</div>
+        </div>
+        <button class="btn btn-navy" onclick="openModal('modalAnnouncement')">+ Thêm thông báo</button>
+      </div>
+      <div id="announcementsList"><div class="loading"><div class="spinner"></div></div></div>
+    </div>
+
+    <!-- T: Discussion -->
+    <div class="page" id="page-tdiscussion">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Thảo luận</div>
+          <div class="page-subtitle">Tương tác với học sinh</div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:20px;">
+        <div style="display:flex;gap:12px;">
+          <div class="post-avatar" id="discAvatarT" style="background:var(--navy)">S</div>
+          <div style="flex:1">
+            <textarea class="form-textarea" id="discTextT" placeholder="Nhắn gì đó với cả lớp..." style="min-height:72px;"></textarea>
+            <div style="display:flex;justify-content:flex-end;margin-top:8px;">
+              <button class="btn btn-navy btn-sm" onclick="postDiscussion()">Gửi 💬</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="discussionFeed"><div class="loading"><div class="spinner"></div></div></div>
+    </div>
+
+    <!-- ══ STUDENT PAGES ══ -->
+
+    <!-- S: Dashboard -->
+    <div class="page" id="page-sdashboard">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Xin chào, <span id="studentNameDisplay">bạn</span>! 👋</div>
+          <div class="page-subtitle">IELTS with Sebastian</div>
+        </div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card" style="border-top-color:var(--gold)">
+          <div class="stat-label">Band mục tiêu</div>
+          <div class="band-display">
+            <span class="band-num" id="sTargetBand">—</span>
+            <span class="band-label">/ 9.0</span>
+          </div>
+        </div>
+        <div class="stat-card" style="border-top-color:var(--success)">
+          <div class="stat-label">Điểm trung bình</div>
+          <div class="stat-value" id="sAvgScore">—</div>
+          <div class="stat-sub">/ 10.0</div>
+        </div>
+        <div class="stat-card" style="border-top-color:var(--reading)">
+          <div class="stat-label">Bài giảng đã học</div>
+          <div class="stat-value" id="sLessonsViewed">—</div>
+        </div>
+        <div class="stat-card" style="border-top-color:var(--danger)">
+          <div class="stat-label">Bài tập chờ nộp</div>
+          <div class="stat-value" id="sPendingWork">—</div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="section-title">Bài tập sắp đến hạn</div>
+          <div id="sDueList"><div class="loading"><div class="spinner"></div></div></div>
+        </div>
+        <div class="card">
+          <div class="section-title">Bài giảng mới nhất</div>
+          <div id="sNewLessons"><div class="loading"><div class="spinner"></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- S: Lessons -->
+    <div class="page" id="page-slessons">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Bài giảng</div>
+          <div class="page-subtitle">Học liệu từ Sebastian</div>
+        </div>
+      </div>
+      <div class="tabs" id="skillFilterTabs">
+        <button class="tab active" onclick="filterSLessons(this,'')">Tất cả</button>
+        <button class="tab" onclick="filterSLessons(this,'Reading')">📖 Reading</button>
+        <button class="tab" onclick="filterSLessons(this,'Listening')">🎧 Listening</button>
+        <button class="tab" onclick="filterSLessons(this,'Writing')">✍️ Writing</button>
+        <button class="tab" onclick="filterSLessons(this,'Speaking')">🗣️ Speaking</button>
+        <button class="tab" onclick="filterSLessons(this,'Vocabulary')">📚 Vocab</button>
+        <button class="tab" onclick="filterSLessons(this,'Grammar')">📝 Grammar</button>
+      </div>
+      <div class="grid-3" id="sLessonsGrid">
+        <div class="loading" style="grid-column:1/-1"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- S: My Work -->
+    <div class="page" id="page-smywork">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Bài tập của tôi</div>
+          <div class="page-subtitle">Nộp bài và xem kết quả</div>
+        </div>
+      </div>
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab(this,'sw-todo')">Cần nộp</button>
+        <button class="tab" onclick="switchTab(this,'sw-done')">Đã nộp</button>
+      </div>
+      <div class="tab-content active" id="sw-todo">
+        <div id="sTodoList"><div class="loading"><div class="spinner"></div></div></div>
+      </div>
+      <div class="tab-content" id="sw-done">
+        <div class="card" id="sDoneList"><div class="loading"><div class="spinner"></div></div></div>
+      </div>
+    </div>
+
+    <!-- S: Grades -->
+    <div class="page" id="page-sgrades">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Điểm số</div>
+          <div class="page-subtitle">Kết quả học tập của bạn</div>
+        </div>
+      </div>
+      <div class="card" id="gradesContent"><div class="loading"><div class="spinner"></div></div></div>
+    </div>
+
+    <!-- S: Discussion -->
+    <div class="page" id="page-sdiscussion">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Thảo luận</div>
+          <div class="page-subtitle">Hỏi đáp với thầy và bạn học</div>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:20px;">
+        <div style="display:flex;gap:12px;">
+          <div class="post-avatar" id="discAvatarS" style="background:var(--reading)">?</div>
+          <div style="flex:1">
+            <textarea class="form-textarea" id="discTextS" placeholder="Đặt câu hỏi hoặc chia sẻ với lớp..." style="min-height:72px;"></textarea>
+            <div style="display:flex;justify-content:flex-end;margin-top:8px;">
+              <button class="btn btn-navy btn-sm" onclick="postDiscussion()">Gửi 💬</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="sDiscussionFeed"><div class="loading"><div class="spinner"></div></div></div>
+    </div>
+
+    <!-- S: Announcements -->
+    <div class="page" id="page-sannouncements">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Thông báo</div>
+          <div class="page-subtitle">Thông tin từ Sebastian</div>
+        </div>
+      </div>
+      <div id="sAnnouncementsList"><div class="loading"><div class="spinner"></div></div></div>
+    </div>
+
+  </div><!-- end main-content -->
+</div><!-- end appShell -->
+
+<!-- ══════════════ MODALS ══════════════ -->
+
+<!-- Modal: Add Lesson -->
+<div class="modal-overlay" id="modalLesson">
+  <div class="modal">
+    <div class="modal-title">📚 Đăng bài giảng mới</div>
+    <div class="form-group">
+      <label class="form-label">Tiêu đề *</label>
+      <input class="form-input" id="mLessonTitle" placeholder="VD: IELTS Writing Task 2 — Opinion Essays">
+    </div>
+    <div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div>
+        <label class="form-label">Kỹ năng *</label>
+        <select class="form-select" id="mLessonSkill">
+          <option>Reading</option><option>Listening</option>
+          <option>Writing</option><option>Speaking</option>
+          <option>Vocabulary</option><option>Grammar</option><option>General</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Band mục tiêu</label>
+        <select class="form-select" id="mLessonBand">
+          <option>All</option><option>5.0-6.0</option>
+          <option>6.0-7.0</option><option>7.0-8.0</option><option>8.0+</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nội dung bài giảng *</label>
+      <textarea class="form-textarea" id="mLessonContent" placeholder="Nhập nội dung, hướng dẫn, tips..." style="min-height:130px;"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Link video (YouTube, Google Drive...)</label>
+      <input class="form-input" id="mLessonVideo" placeholder="https://youtube.com/...">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modalLesson')">Hủy</button>
+      <button class="btn btn-navy" onclick="submitLesson()">Đăng bài giảng</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Add Assignment -->
+<div class="modal-overlay" id="modalAssignment">
+  <div class="modal">
+    <div class="modal-title">📝 Giao bài tập mới</div>
+    <div class="form-group">
+      <label class="form-label">Tiêu đề bài tập *</label>
+      <input class="form-input" id="mAsgTitle" placeholder="VD: Writing Task 2 — Tuần 3">
+    </div>
+    <div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div>
+        <label class="form-label">Kỹ năng *</label>
+        <select class="form-select" id="mAsgSkill">
+          <option>Reading</option><option>Listening</option>
+          <option>Writing</option><option>Speaking</option>
+          <option>Vocabulary</option><option>Grammar</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Hạn nộp</label>
+        <input class="form-input" type="datetime-local" id="mAsgDeadline">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Đề bài / Mô tả *</label>
+      <textarea class="form-textarea" id="mAsgDesc" placeholder="Nội dung đề bài..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Hướng dẫn làm bài</label>
+      <textarea class="form-textarea" id="mAsgInstructions" placeholder="Gợi ý, yêu cầu format..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modalAssignment')">Hủy</button>
+      <button class="btn btn-navy" onclick="submitAssignment()">Giao bài tập</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Grade Submission -->
+<div class="modal-overlay" id="modalGrade">
+  <div class="modal">
+    <div class="modal-title">✍️ Chấm điểm</div>
+    <div id="gradeInfo" style="background:var(--cream);border-radius:10px;padding:14px 16px;margin-bottom:20px;font-size:0.88rem;"></div>
+    <div class="form-group">
+      <label class="form-label">Điểm số (0–10) *</label>
+      <input class="form-input" type="number" id="gradeScore" min="0" max="10" step="0.5" placeholder="8.5">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Band IELTS tương đương (tuỳ chọn)</label>
+      <input class="form-input" type="number" id="gradeBand" min="0" max="9" step="0.5" placeholder="6.5">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nhận xét chi tiết *</label>
+      <textarea class="form-textarea" id="gradeFeedback" placeholder="Nhận xét về nội dung, cách trình bày, điểm cần cải thiện..."></textarea>
+    </div>
+    <input type="hidden" id="gradeSubmissionId">
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modalGrade')">Hủy</button>
+      <button class="btn btn-success" onclick="submitGrade()">Xác nhận điểm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Submit Work (Student) -->
+<div class="modal-overlay" id="modalSubmitWork">
+  <div class="modal">
+    <div class="modal-title">📤 Nộp bài tập</div>
+    <div id="submitWorkInfo" style="background:var(--gold-pale);border-radius:10px;padding:14px 16px;margin-bottom:20px;font-size:0.88rem;border:1px solid #f0d8a8;"></div>
+    <div class="form-group">
+      <label class="form-label">Bài làm của bạn *</label>
+      <textarea class="form-textarea" id="submitWorkContent" placeholder="Paste bài làm vào đây, hoặc nhập nội dung trả lời..." style="min-height:160px;"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Ghi chú cho thầy (tuỳ chọn)</label>
+      <input class="form-input" id="submitWorkNote" placeholder="VD: Em chưa chắc phần kết luận...">
+    </div>
+    <input type="hidden" id="submitWorkId">
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modalSubmitWork')">Hủy</button>
+      <button class="btn btn-navy" onclick="doSubmitWork()">Nộp bài</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Announcement -->
+<div class="modal-overlay" id="modalAnnouncement">
+  <div class="modal">
+    <div class="modal-title">📢 Thêm thông báo</div>
+    <div class="form-group">
+      <label class="form-label">Tiêu đề *</label>
+      <input class="form-input" id="mAnnTitle" placeholder="VD: Lịch kiểm tra cuối tháng">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nội dung *</label>
+      <textarea class="form-textarea" id="mAnnContent" placeholder="Nội dung thông báo..."></textarea>
+    </div>
+    <div class="form-group" style="display:flex;align-items:center;gap:10px;">
+      <input type="checkbox" id="mAnnImportant" style="width:18px;height:18px;cursor:pointer;">
+      <label for="mAnnImportant" style="cursor:pointer;font-size:0.88rem;">🔴 Thông báo quan trọng</label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modalAnnouncement')">Hủy</button>
+      <button class="btn btn-navy" onclick="submitAnnouncement()">Đăng thông báo</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: View Lesson -->
+<div class="modal-overlay" id="modalViewLesson">
+  <div class="modal" style="max-width:680px;">
+    <div class="modal-title" id="viewLessonTitle"></div>
+    <div id="viewLessonMeta" style="margin-bottom:16px;display:flex;gap:10px;align-items:center;"></div>
+    <div id="viewLessonContent" style="font-size:0.92rem;line-height:1.75;color:#333;white-space:pre-wrap;max-height:400px;overflow-y:auto;padding-right:4px;"></div>
+    <div id="viewLessonVideo" style="margin-top:16px;"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modalViewLesson')">Đóng</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════
+// SUPABASE INIT
+// ══════════════════════════════════════════════
+const SUPABASE_URL = 'https://gepjomwdvaindcqiudoa.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdlcGpvbXdkdmFpbmRjcWl1ZG9hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgzODU2NzcsImV4cCI6MjA5Mzk2MTY3N30.cD15Pq3NVRJL9CJqGO3vs9HqT5tcHvL8S0o67dOwEcI';
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null;
+let currentProfile = null;
+let allLessons = [];
+let allDiscussions = [];
+let sLessonFilter = '';
+
+// ── INIT ──────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    await loadProfile(session.user);
+    showApp();
+  } else {
+    showAuth();
+  }
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      await loadProfile(session.user);
+      showApp();
+    } else if (event === 'SIGNED_OUT') {
+      showAuth();
+    }
+  });
+});
+
+async function loadProfile(user) {
+  currentUser = user;
+  const { data } = await sb.from('profiles').select('*').eq('id', user.id).single();
+  currentProfile = data;
+}
+
+function showAuth() {
+  document.getElementById('authScreen').style.display = 'flex';
+  document.getElementById('appShell').style.display = 'none';
+}
+
+function showApp() {
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('appShell').style.display = 'block';
+  setupTopbar();
+  if (currentProfile?.role === 'teacher') {
+    showPage('tdashboard');
+  } else {
+    showPage('sdashboard');
+  }
+}
+
+// ── TOPBAR ────────────────────────────────────
+function setupTopbar() {
+  const name = currentProfile?.full_name || 'User';
+  document.getElementById('topbarUserName').textContent = name;
+  document.getElementById('topbarAvatar').textContent = name.charAt(0).toUpperCase();
+
+  const isTeacher = currentProfile?.role === 'teacher';
+  const navEl = document.getElementById('topbarNav');
+
+  const teacherNav = [
+    { label: '📊 Tổng quan', page: 'tdashboard' },
+    { label: '📚 Bài giảng', page: 'tlessons' },
+    { label: '📝 Bài tập', page: 'tassignments' },
+    { label: '📋 Bài nộp', page: 'tsubmissions' },
+    { label: '👥 Học sinh', page: 'tstudents' },
+    { label: '💬 Thảo luận', page: 'tdiscussion' },
+    { label: '📢 Thông báo', page: 'tannouncements' },
+  ];
+  const studentNav = [
+    { label: '🏠 Trang chủ', page: 'sdashboard' },
+    { label: '📚 Bài giảng', page: 'slessons' },
+    { label: '✏️ Bài tập', page: 'smywork' },
+    { label: '🏆 Điểm số', page: 'sgrades' },
+    { label: '💬 Thảo luận', page: 'sdiscussion' },
+    { label: '📢 Thông báo', page: 'sannouncements' },
+  ];
+
+  const nav = isTeacher ? teacherNav : studentNav;
+  navEl.innerHTML = nav.map(n =>
+    `<button class="nav-btn" onclick="showPage('${n.page}')" data-page="${n.page}">${n.label}</button>`
+  ).join('');
+}
+
+// ── AUTH ──────────────────────────────────────
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
+}
+
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  const btn = document.getElementById('loginBtn');
+  errEl.style.display = 'none';
+  btn.textContent = 'Đang đăng nhập...'; btn.disabled = true;
+  const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+  btn.textContent = 'Đăng nhập'; btn.disabled = false;
+  if (error) { errEl.textContent = 'Email hoặc mật khẩu không đúng.'; errEl.style.display = 'block'; }
+}
+
+async function doRegister() {
+  const name = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const pass = document.getElementById('regPassword').value;
+  const band = document.getElementById('regBand').value;
+  const errEl = document.getElementById('registerError');
+  const btn = document.getElementById('registerBtn');
+  errEl.style.display = 'none';
+  if (!name || !email || !pass) { errEl.textContent = 'Vui lòng điền đầy đủ thông tin.'; errEl.style.display = 'block'; return; }
+  if (pass.length < 6) { errEl.textContent = 'Mật khẩu tối thiểu 6 ký tự.'; errEl.style.display = 'block'; return; }
+  btn.textContent = 'Đang tạo...'; btn.disabled = true;
+  const { error } = await sb.auth.signUp({
+    email, password: pass,
+    options: { data: { full_name: name, role: 'student', target_band: parseFloat(band) } }
+  });
+  btn.textContent = 'Tạo tài khoản'; btn.disabled = false;
+  if (error) { errEl.textContent = error.message; errEl.style.display = 'block'; return; }
+  showToast('✅ Đăng ký thành công! Vui lòng kiểm tra email để xác nhận.');
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+}
+
+// ── PAGE NAVIGATION ───────────────────────────
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const pg = document.getElementById('page-' + id);
+  if (pg) pg.classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.page === id);
+  });
+  loadPageData(id);
+}
+
+async function loadPageData(page) {
+  switch(page) {
+    case 'tdashboard': await loadTeacherDashboard(); break;
+    case 'tlessons': await loadLessons('teacher'); break;
+    case 'tassignments': await loadAssignments(); break;
+    case 'tsubmissions': await loadSubmissions(); break;
+    case 'tstudents': await loadStudents(); break;
+    case 'tannouncements': case 'sannouncements': await loadAnnouncements(); break;
+    case 'tdiscussion': case 'sdiscussion': await loadDiscussions(); break;
+    case 'sdashboard': await loadStudentDashboard(); break;
+    case 'slessons': await loadLessons('student'); break;
+    case 'smywork': await loadMyWork(); break;
+    case 'sgrades': await loadGrades(); break;
+  }
+}
+
+// ── TEACHER DASHBOARD ─────────────────────────
+async function loadTeacherDashboard() {
+  document.getElementById('teacherName').textContent = currentProfile?.full_name || 'Thầy/Cô';
+
+  const [{ count: studentsCount }, { count: lessonsCount }, { count: pendingCount }, { count: assignCount }] = await Promise.all([
+    sb.from('profiles').select('*', {count:'exact',head:true}).eq('role','student'),
+    sb.from('lessons').select('*', {count:'exact',head:true}),
+    sb.from('submissions').select('*', {count:'exact',head:true}).eq('status','submitted'),
+    sb.from('assignments').select('*', {count:'exact',head:true}).eq('is_active',true),
+  ]);
+
+  document.getElementById('statStudents').textContent = studentsCount ?? 0;
+  document.getElementById('statLessons').textContent = lessonsCount ?? 0;
+  document.getElementById('statPending').textContent = pendingCount ?? 0;
+  document.getElementById('statAssignments').textContent = assignCount ?? 0;
+
+  // Pending submissions
+  const { data: subs } = await sb.from('submissions')
+    .select('*, profiles(full_name), assignments(title,skill)')
+    .eq('status','submitted').order('submitted_at',{ascending:false}).limit(5);
+  renderPendingList(subs || []);
+
+  // Recent lessons
+  const { data: lessons } = await sb.from('lessons')
+    .select('*').order('created_at',{ascending:false}).limit(5);
+  renderRecentLessons(lessons || []);
+}
+
+function renderPendingList(subs) {
+  const el = document.getElementById('pendingList');
+  if (!subs.length) { el.innerHTML = '<div class="empty-state"><div class="ei">✅</div><p>Không có bài nào chờ chấm</p></div>'; return; }
+  el.innerHTML = subs.map(s => `
+    <div class="item-row">
+      <div class="item-icon" style="background:var(--gold-pale)">📄</div>
+      <div class="item-info">
+        <div class="item-title">${s.assignments?.title || 'Bài tập'}</div>
+        <div class="item-sub">${s.profiles?.full_name} • ${timeAgo(s.submitted_at)}</div>
+      </div>
+      <button class="btn btn-sm btn-gold-outline" onclick="openGradeModal('${s.id}','${s.profiles?.full_name}','${s.assignments?.title}','${(s.content||'').replace(/'/g,'&apos;')}')">Chấm</button>
+    </div>
+  `).join('');
+}
+
+function renderRecentLessons(lessons) {
+  const el = document.getElementById('recentLessons');
+  if (!lessons.length) { el.innerHTML = '<div class="empty-state"><div class="ei">📚</div><p>Chưa có bài giảng nào</p></div>'; return; }
+  el.innerHTML = lessons.map(l => `
+    <div class="item-row">
+      <div class="item-icon" style="background:var(--cream)">📘</div>
+      <div class="item-info">
+        <div class="item-title">${l.title}</div>
+        <div class="item-sub"><span class="skill-badge skill-${l.skill}">${l.skill}</span> • ${timeAgo(l.created_at)} • ${l.view_count} lượt xem</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── LESSONS ───────────────────────────────────
+async function loadLessons(role) {
+  const { data } = await sb.from('lessons').select('*, profiles(full_name)').order('created_at',{ascending:false});
+  allLessons = data || [];
+  if (role === 'teacher') renderLessonsGrid('lessonsGrid', allLessons, true);
+  else renderLessonsGrid('sLessonsGrid', allLessons.filter(l => !sLessonFilter || l.skill === sLessonFilter), false);
+  // also update dashboard
+  renderNewLessonsWidget(allLessons.slice(0,3));
+}
+
+function renderLessonsGrid(gridId, lessons, isTeacher) {
+  const el = document.getElementById(gridId);
+  if (!el) return;
+  if (!lessons.length) { el.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="ei">📚</div><p>Chưa có bài giảng nào</p></div>'; return; }
+  el.innerHTML = lessons.map(l => `
+    <div class="lesson-card">
+      <div class="lesson-card-top top-${l.skill}"></div>
+      <div class="lesson-card-body">
+        <span class="skill-badge skill-${l.skill}">${l.skill}</span>
+        <div class="lesson-card-title">${l.title}</div>
+        <div class="lesson-card-desc">${l.content.substring(0,100)}${l.content.length>100?'...':''}</div>
+        <div class="lesson-card-meta" style="margin-top:10px;">
+          <span>📅 ${formatDate(l.created_at)}</span>
+          <span>👁 ${l.view_count}</span>
+          ${l.band_target !== 'All' ? `<span>🎯 Band ${l.band_target}</span>` : ''}
+        </div>
+        <div class="lesson-card-actions">
+          <button class="btn btn-sm btn-gold-outline" onclick="viewLesson(${JSON.stringify(l).replace(/"/g,'&quot;')})">📖 Xem</button>
+          ${isTeacher ? `<button class="btn btn-sm btn-outline" onclick="deleteLesson('${l.id}')">🗑</button>` : ''}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function viewLesson(l) {
+  document.getElementById('viewLessonTitle').textContent = l.title;
+  document.getElementById('viewLessonMeta').innerHTML = `<span class="skill-badge skill-${l.skill}">${l.skill}</span><span style="font-size:0.8rem;color:var(--muted)">Band ${l.band_target} • ${formatDate(l.created_at)}</span>`;
+  document.getElementById('viewLessonContent').textContent = l.content;
+  document.getElementById('viewLessonVideo').innerHTML = l.video_url
+    ? `<a href="${l.video_url}" target="_blank" class="btn btn-navy btn-sm">▶ Xem video bài giảng</a>` : '';
+  openModal('modalViewLesson');
+  // increment view count
+  sb.from('lessons').update({view_count: (l.view_count||0)+1}).eq('id',l.id);
+  // mark progress for students
+  if (currentProfile?.role === 'student') {
+    sb.from('lesson_progress').upsert({student_id: currentUser.id, lesson_id: l.id},{onConflict:'student_id,lesson_id'});
+  }
+}
+
+function filterLessons(q) {
+  const filtered = allLessons.filter(l => l.title.toLowerCase().includes(q.toLowerCase()));
+  renderLessonsGrid('lessonsGrid', filtered, true);
+}
+
+function filterLessonsBySkill(skill) {
+  const filtered = skill ? allLessons.filter(l => l.skill === skill) : allLessons;
+  renderLessonsGrid('lessonsGrid', filtered, true);
+}
+
+function filterSLessons(btn, skill) {
+  sLessonFilter = skill;
+  document.querySelectorAll('#skillFilterTabs .tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  const filtered = skill ? allLessons.filter(l => l.skill === skill) : allLessons;
+  renderLessonsGrid('sLessonsGrid', filtered, false);
+}
+
+async function submitLesson() {
+  const title = document.getElementById('mLessonTitle').value.trim();
+  const content = document.getElementById('mLessonContent').value.trim();
+  const skill = document.getElementById('mLessonSkill').value;
+  const band = document.getElementById('mLessonBand').value;
+  const video = document.getElementById('mLessonVideo').value.trim();
+  if (!title || !content) { showToast('⚠️ Vui lòng điền tiêu đề và nội dung'); return; }
+  const { error } = await sb.from('lessons').insert({
+    teacher_id: currentUser.id, title, skill, band_target: band, content, video_url: video || null
+  });
+  if (error) { showToast('❌ Lỗi: ' + error.message); return; }
+  closeModal('modalLesson');
+  document.getElementById('mLessonTitle').value = '';
+  document.getElementById('mLessonContent').value = '';
+  document.getElementById('mLessonVideo').value = '';
+  showToast('✅ Đã đăng bài giảng!');
+  loadLessons('teacher');
+  loadTeacherDashboard();
+}
+
+async function deleteLesson(id) {
+  if (!confirm('Xóa bài giảng này?')) return;
+  await sb.from('lessons').delete().eq('id', id);
+  showToast('🗑 Đã xóa bài giảng');
+  loadLessons('teacher');
+}
+
+// ── ASSIGNMENTS ───────────────────────────────
+async function loadAssignments() {
+  const { data } = await sb.from('assignments').select('*').order('created_at',{ascending:false});
+  const el = document.getElementById('assignmentsList');
+  if (!data?.length) { el.innerHTML = '<div class="empty-state"><div class="ei">📝</div><p>Chưa có bài tập nào</p></div>'; return; }
+
+  // Get submission counts
+  const counts = {};
+  for (const a of data) {
+    const { count } = await sb.from('submissions').select('*',{count:'exact',head:true}).eq('assignment_id',a.id);
+    counts[a.id] = count || 0;
+  }
+
+  el.innerHTML = data.map(a => `
+    <div class="card" style="margin-bottom:14px;">
+      <div style="display:flex;align-items:flex-start;gap:14px;">
+        <div style="flex:1;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+            <span class="skill-badge skill-${a.skill}">${a.skill}</span>
+            <span class="chip ${a.is_active?'chip-open':'chip-graded'}">${a.is_active?'Đang mở':'Đã đóng'}</span>
+          </div>
+          <div style="font-weight:700;font-size:1rem;margin-bottom:4px;">${a.title}</div>
+          <div style="font-size:0.85rem;color:#555;line-height:1.5;margin-bottom:10px;">${a.description}</div>
+          <div style="font-size:0.78rem;color:var(--muted);display:flex;gap:16px;">
+            ${a.deadline ? `<span>⏰ Hạn: ${formatDate(a.deadline)}</span>` : ''}
+            <span>📋 ${counts[a.id]} bài nộp</span>
+          </div>
+        </div>
+        <button class="btn btn-sm btn-outline" onclick="toggleAssignment('${a.id}',${a.is_active})">${a.is_active?'Đóng':'Mở lại'}</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function submitAssignment() {
+  const title = document.getElementById('mAsgTitle').value.trim();
+  const desc = document.getElementById('mAsgDesc').value.trim();
+  const skill = document.getElementById('mAsgSkill').value;
+  const deadline = document.getElementById('mAsgDeadline').value;
+  const instructions = document.getElementById('mAsgInstructions').value.trim();
+  if (!title || !desc) { showToast('⚠️ Vui lòng điền tiêu đề và đề bài'); return; }
+  const { error } = await sb.from('assignments').insert({
+    teacher_id: currentUser.id, title, description: desc, skill,
+    deadline: deadline || null, instructions: instructions || null
+  });
+  if (error) { showToast('❌ Lỗi: ' + error.message); return; }
+  closeModal('modalAssignment');
+  document.getElementById('mAsgTitle').value = '';
+  document.getElementById('mAsgDesc').value = '';
+  showToast('✅ Đã giao bài tập!');
+  loadAssignments();
+}
+
+async function toggleAssignment(id, current) {
+  await sb.from('assignments').update({is_active: !current}).eq('id',id);
+  showToast(current ? '🔒 Đã đóng bài tập' : '🔓 Đã mở lại bài tập');
+  loadAssignments();
+}
+
+// ── SUBMISSIONS ───────────────────────────────
+async function loadSubmissions() {
+  const { data: pending } = await sb.from('submissions')
+    .select('*, profiles(full_name), assignments(title,skill)')
+    .eq('status','submitted').order('submitted_at',{ascending:false});
+
+  const { data: graded } = await sb.from('submissions')
+    .select('*, profiles(full_name), assignments(title,skill)')
+    .eq('status','graded').order('graded_at',{ascending:false}).limit(30);
+
+  renderSubmissionsList('pendingSubmissions', pending||[], true);
+  renderSubmissionsList('gradedSubmissions', graded||[], false);
+}
+
+function renderSubmissionsList(elId, subs, isPending) {
+  const el = document.getElementById(elId);
+  if (!subs.length) {
+    el.innerHTML = `<div class="empty-state"><div class="ei">${isPending?'✅':'📋'}</div><p>${isPending?'Không có bài chờ chấm':'Chưa có bài nào được chấm'}</p></div>`;
+    return;
+  }
+  el.innerHTML = subs.map(s => `
+    <div class="item-row">
+      <div class="item-icon" style="background:${isPending?'var(--gold-pale)':'var(--cream)'}">📄</div>
+      <div class="item-info">
+        <div class="item-title">${s.profiles?.full_name} — ${s.assignments?.title}</div>
+        <div class="item-sub">
+          <span class="skill-badge skill-${s.assignments?.skill}">${s.assignments?.skill}</span>
+          ${isPending ? `Nộp ${timeAgo(s.submitted_at)}` : `Điểm: ${s.score}/10 • ${s.band_equivalent ? 'Band '+s.band_equivalent : ''}`}
+        </div>
+        ${!isPending && s.feedback ? `<div class="feedback-box"><div class="feedback-label">Nhận xét</div><div class="feedback-text">${s.feedback}</div></div>` : ''}
+      </div>
+      ${isPending ? `<button class="btn btn-sm btn-gold-outline" onclick="openGradeModal('${s.id}','${s.profiles?.full_name}','${s.assignments?.title}','${(s.content||'').substring(0,200).replace(/'/g,'&apos;')}')">Chấm điểm</button>` : `<span class="score-circle ${s.score>=8?'sc-high':s.score>=6?'sc-mid':'sc-low'}">${s.score}</span>`}
+    </div>
+  `).join('');
+}
+
+function openGradeModal(subId, studentName, assignTitle, content) {
+  document.getElementById('gradeSubmissionId').value = subId;
+  document.getElementById('gradeInfo').innerHTML = `
+    <strong>Học sinh:</strong> ${studentName}<br>
+    <strong>Bài tập:</strong> ${assignTitle}<br>
+    ${content ? `<strong>Bài làm:</strong><br><span style="color:#444;line-height:1.6;">${content}</span>` : ''}
+  `;
+  document.getElementById('gradeScore').value = '';
+  document.getElementById('gradeFeedback').value = '';
+  openModal('modalGrade');
+}
+
+async function submitGrade() {
+  const subId = document.getElementById('gradeSubmissionId').value;
+  const score = parseFloat(document.getElementById('gradeScore').value);
+  const feedback = document.getElementById('gradeFeedback').value.trim();
+  const band = document.getElementById('gradeBand').value;
+  if (isNaN(score) || !feedback) { showToast('⚠️ Vui lòng nhập điểm và nhận xét'); return; }
+  const { error } = await sb.from('submissions').update({
+    score, feedback, status: 'graded',
+    band_equivalent: band ? parseFloat(band) : null,
+    graded_at: new Date().toISOString()
+  }).eq('id', subId);
+  if (error) { showToast('❌ ' + error.message); return; }
+  closeModal('modalGrade');
+  showToast('✅ Đã chấm điểm!');
+  loadSubmissions();
+  loadTeacherDashboard();
+}
+
+// ── STUDENTS ──────────────────────────────────
+async function loadStudents() {
+  const { data } = await sb.from('profiles').select('*').eq('role','student').order('full_name');
+  const el = document.getElementById('studentsList');
+  if (!data?.length) { el.innerHTML = '<div class="empty-state"><div class="ei">👥</div><p>Chưa có học sinh nào đăng ký</p></div>'; return; }
+  el.innerHTML = data.map(s => `
+    <div class="item-row">
+      <div class="post-avatar" style="background:var(--navy);color:var(--white);">${s.full_name.charAt(0)}</div>
+      <div class="item-info">
+        <div class="item-title">${s.full_name}</div>
+        <div class="item-sub">${s.email} • Mục tiêu: Band ${s.target_band || '?'}</div>
+      </div>
+      <span class="chip ${s.is_active ? 'chip-open' : 'chip-graded'}">${s.is_active ? 'Đang học' : 'Không hoạt động'}</span>
+    </div>
+  `).join('');
+}
+
+// ── ANNOUNCEMENTS ─────────────────────────────
+async function loadAnnouncements() {
+  const { data } = await sb.from('announcements').select('*, profiles(full_name)').order('created_at',{ascending:false});
+  const isTeacher = currentProfile?.role === 'teacher';
+  const elId = isTeacher ? 'announcementsList' : 'sAnnouncementsList';
+  const el = document.getElementById(elId);
+  if (!el) return;
+  if (!data?.length) { el.innerHTML = '<div class="empty-state"><div class="ei">📢</div><p>Chưa có thông báo nào</p></div>'; return; }
+  el.innerHTML = data.map(a => `
+    <div class="ann-card ${a.is_important ? 'important' : ''}">
+      <div class="ann-title">${a.is_important ? '🔴 ' : ''}${a.title}</div>
+      <div class="ann-content">${a.content}</div>
+      <div class="ann-date">📅 ${formatDate(a.created_at)} • ${a.profiles?.full_name}</div>
+    </div>
+  `).join('');
+}
+
+async function submitAnnouncement() {
+  const title = document.getElementById('mAnnTitle').value.trim();
+  const content = document.getElementById('mAnnContent').value.trim();
+  const important = document.getElementById('mAnnImportant').checked;
+  if (!title || !content) { showToast('⚠️ Vui lòng điền đầy đủ'); return; }
+  await sb.from('announcements').insert({ teacher_id: currentUser.id, title, content, is_important: important });
+  closeModal('modalAnnouncement');
+  document.getElementById('mAnnTitle').value = '';
+  document.getElementById('mAnnContent').value = '';
+  showToast('📢 Đã đăng thông báo!');
+  loadAnnouncements();
+}
+
+// ── DISCUSSIONS ───────────────────────────────
+async function loadDiscussions() {
+  const { data } = await sb.from('discussions')
+    .select('*, profiles(full_name,role)')
+    .is('parent_id', null)
+    .order('created_at', {ascending:false});
+  allDiscussions = data || [];
+  const isTeacher = currentProfile?.role === 'teacher';
+  const elId = isTeacher ? 'discussionFeed' : 'sDiscussionFeed';
+  renderDiscFeed(elId, allDiscussions);
+  // Set avatar
+  const avatarId = isTeacher ? 'discAvatarT' : 'discAvatarS';
+  const avEl = document.getElementById(avatarId);
+  if (avEl) avEl.textContent = (currentProfile?.full_name||'?').charAt(0).toUpperCase();
+}
+
+function renderDiscFeed(elId, posts) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  if (!posts.length) { el.innerHTML = '<div class="empty-state"><div class="ei">💬</div><p>Chưa có bài đăng nào</p></div>'; return; }
+  const colors = ['#1a4a8a','#2d6a6a','#6b3fa0','#b05a20','#2d7a5a','#b03030'];
+  el.innerHTML = posts.map((p,i) => {
+    const isTeacher = p.profiles?.role === 'teacher';
+    const color = isTeacher ? 'var(--navy)' : colors[i % colors.length];
+    return `
+      <div class="post-item">
+        <div class="post-avatar" style="background:${color}">${(p.profiles?.full_name||'?').charAt(0).toUpperCase()}</div>
+        <div class="post-body">
+          <div class="post-header">
+            <span class="post-name">${p.profiles?.full_name}</span>
+            ${isTeacher ? '<span class="teacher-badge">Sebastian</span>' : ''}
+            <span class="post-time">${timeAgo(p.created_at)}</span>
+          </div>
+          <div class="post-text">${p.content}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function postDiscussion() {
+  const isTeacher = currentProfile?.role === 'teacher';
+  const textEl = document.getElementById(isTeacher ? 'discTextT' : 'discTextS');
+  const text = textEl.value.trim();
+  if (!text) return;
+  const { error } = await sb.from('discussions').insert({ author_id: currentUser.id, content: text });
+  if (error) { showToast('❌ ' + error.message); return; }
+  textEl.value = '';
+  showToast('✅ Đã gửi!');
+  loadDiscussions();
+}
+
+// ── STUDENT DASHBOARD ─────────────────────────
+async function loadStudentDashboard() {
+  document.getElementById('studentNameDisplay').textContent = currentProfile?.full_name?.split(' ').pop() || 'bạn';
+  document.getElementById('sTargetBand').textContent = currentProfile?.target_band || '?';
+
+  // Stats
+  const [{ data: grades }, { count: progressCount }, { data: assignments }] = await Promise.all([
+    sb.from('submissions').select('score').eq('student_id', currentUser.id).eq('status','graded'),
+    sb.from('lesson_progress').select('*',{count:'exact',head:true}).eq('student_id', currentUser.id),
+    sb.from('assignments').select('id').eq('is_active',true),
+  ]);
+
+  const avg = grades?.length ? (grades.reduce((a,b) => a + (b.score||0), 0) / grades.length).toFixed(1) : '—';
+  document.getElementById('sAvgScore').textContent = avg;
+  document.getElementById('sLessonsViewed').textContent = progressCount || 0;
+
+  // How many assignments not yet submitted
+  let pendingWork = 0;
+  if (assignments?.length) {
+    const { data: mySubs } = await sb.from('submissions').select('assignment_id').eq('student_id', currentUser.id);
+    const mySubIds = new Set((mySubs||[]).map(s => s.assignment_id));
+    pendingWork = assignments.filter(a => !mySubIds.has(a.id)).length;
+  }
+  document.getElementById('sPendingWork').textContent = pendingWork;
+
+  // Due assignments
+  const { data: dueAsgs } = await sb.from('assignments').select('*').eq('is_active',true).order('deadline').limit(3);
+  const dueEl = document.getElementById('sDueList');
+  if (!dueAsgs?.length) { dueEl.innerHTML = '<div class="empty-state"><div class="ei">🎉</div><p>Không có bài tập nào</p></div>'; }
+  else dueEl.innerHTML = dueAsgs.map(a => `
+    <div class="item-row">
+      <div class="item-icon" style="background:var(--gold-pale)">📋</div>
+      <div class="item-info">
+        <div class="item-title">${a.title}</div>
+        <div class="item-sub"><span class="skill-badge skill-${a.skill}">${a.skill}</span> ${a.deadline ? '• Hạn: '+formatDate(a.deadline) : ''}</div>
+      </div>
+      <button class="btn btn-sm btn-navy" onclick="openSubmitWork('${a.id}','${a.title}','${a.skill}')">Nộp</button>
+    </div>
+  `).join('');
+
+  // New lessons
+  const { data: newLessons } = await sb.from('lessons').select('*').order('created_at',{ascending:false}).limit(3);
+  renderNewLessonsWidget(newLessons||[]);
+}
+
+function renderNewLessonsWidget(lessons) {
+  const el = document.getElementById('sNewLessons');
+  if (!el) return;
+  if (!lessons.length) { el.innerHTML = '<div class="empty-state"><div class="ei">📚</div><p>Chưa có bài giảng</p></div>'; return; }
+  el.innerHTML = lessons.map(l => `
+    <div class="item-row">
+      <div class="item-icon" style="background:var(--cream)">📘</div>
+      <div class="item-info">
+        <div class="item-title">${l.title}</div>
+        <div class="item-sub"><span class="skill-badge skill-${l.skill}">${l.skill}</span> • ${timeAgo(l.created_at)}</div>
+      </div>
+      <button class="btn btn-sm btn-gold-outline" onclick="viewLesson(${JSON.stringify(l).replace(/"/g,'&quot;')})">Xem</button>
+    </div>
+  `).join('');
+}
+
+// ── MY WORK (Student) ─────────────────────────
+async function loadMyWork() {
+  const { data: assignments } = await sb.from('assignments').select('*').eq('is_active',true).order('created_at',{ascending:false});
+  const { data: mySubs } = await sb.from('submissions').select('*, assignments(title,skill)').eq('student_id', currentUser.id).order('submitted_at',{ascending:false});
+
+  const mySubIds = new Set((mySubs||[]).map(s => s.assignment_id));
+  const todo = (assignments||[]).filter(a => !mySubIds.has(a.id));
+
+  const todoEl = document.getElementById('sTodoList');
+  if (!todo.length) { todoEl.innerHTML = '<div class="empty-state"><div class="ei">🎉</div><p>Bạn đã nộp tất cả bài tập!</p></div>'; }
+  else todoEl.innerHTML = todo.map(a => `
+    <div class="card" style="margin-bottom:14px;">
+      <div style="display:flex;align-items:flex-start;gap:14px;">
+        <div style="flex:1;">
+          <div style="margin-bottom:6px;"><span class="skill-badge skill-${a.skill}">${a.skill}</span></div>
+          <div style="font-weight:700;font-size:1rem;margin-bottom:4px;">${a.title}</div>
+          <div style="font-size:0.85rem;color:#444;line-height:1.55;margin-bottom:10px;">${a.description}</div>
+          ${a.instructions ? `<div style="font-size:0.82rem;color:var(--muted);">💡 ${a.instructions}</div>` : ''}
+          ${a.deadline ? `<div style="font-size:0.78rem;color:var(--danger);margin-top:8px;">⏰ Hạn nộp: ${formatDate(a.deadline)}</div>` : ''}
+        </div>
+        <button class="btn btn-navy btn-sm" onclick="openSubmitWork('${a.id}','${a.title}','${a.skill}')">📤 Nộp bài</button>
+      </div>
+    </div>
+  `).join('');
+
+  const doneEl = document.getElementById('sDoneList');
+  if (!mySubs?.length) { doneEl.innerHTML = '<div class="empty-state"><div class="ei">📋</div><p>Chưa nộp bài nào</p></div>'; return; }
+  doneEl.innerHTML = mySubs.map(s => `
+    <div class="item-row">
+      <div class="item-icon" style="background:${s.status==='graded'?'var(--cream)':'var(--gold-pale)'}">📄</div>
+      <div class="item-info">
+        <div class="item-title">${s.assignments?.title}</div>
+        <div class="item-sub"><span class="skill-badge skill-${s.assignments?.skill}">${s.assignments?.skill}</span> • Nộp ${timeAgo(s.submitted_at)}</div>
+        ${s.feedback ? `<div class="feedback-box" style="margin-top:10px;"><div class="feedback-label">Nhận xét của Sebastian</div><div class="feedback-text">${s.feedback}</div></div>` : ''}
+      </div>
+      ${s.status==='graded' ? `<span class="score-circle ${s.score>=8?'sc-high':s.score>=6?'sc-mid':'sc-low'}">${s.score}</span>` : '<span class="chip chip-pending">Chờ chấm</span>'}
+    </div>
+  `).join('');
+}
+
+function openSubmitWork(assignId, title, skill) {
+  document.getElementById('submitWorkId').value = assignId;
+  document.getElementById('submitWorkInfo').innerHTML = `<strong>${title}</strong><br><span class="skill-badge skill-${skill}">${skill}</span>`;
+  document.getElementById('submitWorkContent').value = '';
+  document.getElementById('submitWorkNote').value = '';
+  openModal('modalSubmitWork');
+}
+
+async function doSubmitWork() {
+  const assignId = document.getElementById('submitWorkId').value;
+  const content = document.getElementById('submitWorkContent').value.trim();
+  const note = document.getElementById('submitWorkNote').value.trim();
+  if (!content) { showToast('⚠️ Vui lòng nhập bài làm'); return; }
+  const fullContent = content + (note ? '\n\n[Ghi chú: ' + note + ']' : '');
+  const { error } = await sb.from('submissions').upsert({
+    assignment_id: assignId, student_id: currentUser.id,
+    content: fullContent, status: 'submitted',
+    submitted_at: new Date().toISOString()
+  }, { onConflict: 'assignment_id,student_id' });
+  if (error) { showToast('❌ ' + error.message); return; }
+  closeModal('modalSubmitWork');
+  showToast('📤 Đã nộp bài thành công!');
+  loadMyWork();
+  loadStudentDashboard();
+}
+
+// ── GRADES ────────────────────────────────────
+async function loadGrades() {
+  const { data } = await sb.from('submissions')
+    .select('*, assignments(title,skill)')
+    .eq('student_id', currentUser.id)
+    .eq('status','graded')
+    .order('graded_at',{ascending:false});
+
+  const el = document.getElementById('gradesContent');
+  if (!data?.length) { el.innerHTML = '<div class="empty-state"><div class="ei">🏆</div><p>Chưa có bài nào được chấm điểm</p></div>'; return; }
+
+  const avg = (data.reduce((a,b) => a+(b.score||0),0)/data.length).toFixed(1);
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);">
+      <div>
+        <div style="font-size:0.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:600;">Điểm trung bình</div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:2.4rem;font-weight:700;color:var(--gold);line-height:1;">${avg}<span style="font-size:1rem;color:var(--muted);font-family:'Outfit',sans-serif;"> / 10</span></div>
+      </div>
+      <div style="font-size:0.85rem;color:var(--muted);">${data.length} bài đã chấm</div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:0.87rem;">
+      <thead>
+        <tr style="border-bottom:2px solid var(--border);">
+          <th style="text-align:left;padding:10px 8px;color:var(--muted);font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;">Bài tập</th>
+          <th style="text-align:left;padding:10px 8px;color:var(--muted);font-weight:600;font-size:0.75rem;text-transform:uppercase;">Kỹ năng</th>
+          <th style="text-align:left;padding:10px 8px;color:var(--muted);font-weight:600;font-size:0.75rem;text-transform:uppercase;">Ngày chấm</th>
+          <th style="text-align:center;padding:10px 8px;color:var(--muted);font-weight:600;font-size:0.75rem;text-transform:uppercase;">Điểm</th>
+          <th style="text-align:left;padding:10px 8px;color:var(--muted);font-weight:600;font-size:0.75rem;text-transform:uppercase;">Nhận xét</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${data.map(s => `
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:12px 8px;font-weight:500;">${s.assignments?.title}</td>
+            <td style="padding:12px 8px;"><span class="skill-badge skill-${s.assignments?.skill}">${s.assignments?.skill}</span></td>
+            <td style="padding:12px 8px;color:var(--muted);">${formatDate(s.graded_at)}</td>
+            <td style="padding:12px 8px;text-align:center;"><span class="score-circle ${s.score>=8?'sc-high':s.score>=6?'sc-mid':'sc-low'}">${s.score}</span></td>
+            <td style="padding:12px 8px;color:#444;max-width:280px;font-size:0.83rem;line-height:1.5;">${s.feedback || '—'}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+// ── HELPERS ───────────────────────────────────
+function formatDate(d) {
+  if (!d) return '';
+  return new Date(d).toLocaleDateString('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric'});
+}
+
+function timeAgo(d) {
+  if (!d) return '';
+  const diff = Date.now() - new Date(d).getTime();
+  const mins = Math.floor(diff/60000);
+  if (mins < 1) return 'vừa xong';
+  if (mins < 60) return `${mins} phút trước`;
+  const hrs = Math.floor(mins/60);
+  if (hrs < 24) return `${hrs} giờ trước`;
+  const days = Math.floor(hrs/24);
+  if (days < 30) return `${days} ngày trước`;
+  return formatDate(d);
+}
+
+function openModal(id) { document.getElementById(id)?.classList.add('open'); }
+function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
+document.addEventListener('click', e => {
+  if (e.target.classList.contains('modal-overlay')) e.target.classList.remove('open');
+});
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+function switchTab(btn, tabId) {
+  const pg = btn.closest('.page') || btn.closest('.modal') || document.body;
+  pg.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  pg.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+  const tc = pg.querySelector('#'+tabId) || document.getElementById(tabId);
+  if (tc) tc.classList.add('active');
+}
+
+// Enter key login
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const lf = document.getElementById('loginForm');
+    const rf = document.getElementById('registerForm');
+    if (lf && lf.style.display !== 'none') doLogin();
+    else if (rf && rf.style.display !== 'none') doRegister();
+  }
+});
+</script>
+</body>
+</html>
